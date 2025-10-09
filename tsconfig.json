@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    /* File Layout */
+    // "rootDir": "./src",
+    // "outDir": "./dist",
+
+    /* Environment Settings */
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+
+    /* Type Handling */
+    "types": ["node", "electron"],  // ✅ ensures consistency with Electron + Node
+    "skipLibCheck": true,           // ✅ prevents duplicate type errors
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    /* Strictness */
+    "strict": true,
+    "isolatedModules": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "allowImportingTsExtensions": false,
+    "verbatimModuleSyntax": false,
+
+    /* Debugging */
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    /* Build Options */
+    "noEmit": true
+  },
+  "include": ["src", "electron"],   // ✅ add both your frontend and main process folders
+  "exclude": ["node_modules"]
+}
