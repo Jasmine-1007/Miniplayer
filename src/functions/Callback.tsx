@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Welcome from "../pages/Welcome";
+import CurrentSong from '../UI/CurrentSong';
 
 const Callback = ()=> {
 
@@ -91,6 +92,7 @@ const Callback = ()=> {
     <div>{message}</div>
     <p>try</p>
     <Welcome />
+    <CurrentSong />
         </div>);
 }
 

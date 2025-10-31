@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react-swc'
 import fs from "fs";
 
@@ -6,7 +7,9 @@ import fs from "fs";
 
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(),
+    tailwindcss()
+  ],
   server: {
     watch:{
       usePolling: true,

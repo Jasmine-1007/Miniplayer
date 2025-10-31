@@ -1,44 +1,50 @@
-import React, { useState } from 'react';
-import { useEffect } from 'react';
+import React, { useState } from "react";
+import { useEffect } from "react";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 
-interface User_Profile {
-  id: string;
-  name: string; // map display_name from backend
-  pictureUrl: string; // map profileImage from backend
-}
 
 function Welcome() {
 
-    const[Profile, setProfile] = useState<User_Profile | null>(null);
+  const access_token = localStorage.getItem("Access_token");
 
-    useEffect(()=> {
-        const getProfile = async ()=> {
-            try{
-                const access_token = localStorage.getItem("Access_token");
-                const response = await fetch (`http://127.0.0.1:4000/getProfile?AccessToken=${access_token}`);
-                const data:User_Profile = await response.json();
-                setProfile(data);
-                console.log(Profile);
+  const {
+    data: profile,
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const response = await fetch(
+        `http://127.0.0.1:4000/getProfile?AccessToken=${access_token}`
+      );
+      const data = await response.json();
 
-            }catch(err:any){
-                console.error(err);
-            }
-        };
-        const timeout = setTimeout(getProfile, 1000);
+      return {
+        id: data.id,
+        name: data.display_name,
+        pictureUrl: data.profileImage,
+      };
+    },
 
-  // cleanup
-  return () => clearTimeout(timeout);
-    }, []);
+    enabled: !!access_token,
+  });
 
-if(!Profile) {return <div>Loading</div>};
+  if (isPending) return <div>Loading</div>;
+  if (error) return <div>Error</div>;
 
   return (
     <div>
-        <p>welcome</p>
-        <p>{Profile.name}</p>
-
+      <h2>Welcome to Miniplayer!</h2>
+      <p>{profile.name}</p>
+      <img src={profile.pictureUrl} width={80}></img>
     </div>
-  )
+  );
 }
 
-export default Welcome
+export default Welcome;
