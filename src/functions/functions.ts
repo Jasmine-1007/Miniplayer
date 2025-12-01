@@ -1,9 +1,8 @@
 import { QueryClient, useQueryClient } from "@tanstack/react-query";
 
 
-export async function refreshToken () {
+export async function refreshToken (RefreshToken : string | null) {
     try {
-      const RefreshToken = localStorage.getItem("Refresh_token");
       const response = await fetch(
         `http://127.0.0.1:4000/refresh?refresh_token=${RefreshToken}`
       );

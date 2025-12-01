@@ -7,20 +7,31 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TokenResponse } from "./functions";
 
+
+
+
 const Mainpage = () => {
 
     //declare windowHeight var
   const [windowHeight, setWindowHeight] = useState<number>(window.innerHeight);
 
-  //
+  
   const queryClient = useQueryClient();
+
 
   const navigate = useNavigate();
 
   //declare interval to be a timer 
   //use useRef so it doesn't rerender each time 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null) ;
+  const intervalRef = useRef<number | null>(null) ;
 
+
+
+  let storedAccessToken : string | null;
+  let storedRefreshToken : string | null;
+//check for existent access and refresh token asap as the component renders
+     storedAccessToken = localStorage.getItem("Access_token");
+     storedRefreshToken = localStorage.getItem("Refresh_token");
 
   //windowresizing Logic:
   useEffect(() => {
@@ -38,14 +49,11 @@ const Mainpage = () => {
 
   useEffect(() => {
 
-    //check for existent access and refresh token asap as the component renders
-    const storedAccessToken = localStorage.getItem("Access_token");
-    const storedRefreshToken = localStorage.getItem("Refresh_token");
-
+    
     //if already logged in (already have tokens)
     if (storedAccessToken && storedRefreshToken) {
         //directly set refreshtoken
-      refreshToken();
+      refreshToken(storedRefreshToken);
       //set a 55 minutes timer to refresh token before it expires
       intervalRef.current = setInterval(refreshToken, 55 * 60 * 1000);
       
@@ -85,7 +93,7 @@ const Mainpage = () => {
       <Welcome
        className={windowHeight < 300 ? "hidden" : ""} />
       <div className="shrink min-h-0 flex items-center">
-        <CurrentSong />
+        <CurrentSong token={storedAccessToken} />
       </div>
       <button onClick={Logout}>Log out</button>
     </div>

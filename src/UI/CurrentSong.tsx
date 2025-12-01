@@ -1,93 +1,225 @@
-import React, { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getCurrentSong, getCurrentSyncedLyric } from '../functions/functions';
-import CurrentLine from './CurrentLine';
-import axios from 'axios';
+import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getCurrentSong, getCurrentSyncedLyric, getProgress } from "../functions/functions";
+import CurrentLine from "./CurrentLine";
+import type { Song } from "../functions/functions";
+import { useCurrentSong } from "../functions/Hooks";
+import { useGetProgress } from "../functions/Hooks";
+import { useGetSyncedLyrics } from "../functions/Hooks";
 
-function CurrentSong() {
+
+function CurrentSong(props: {className? :string, token : string | null}) {
   const access_token = localStorage.getItem("Access_token");
 
+
+  const [lastTitle, setLastTitle] = useState("");
+  const [lastArtist, setLastArtist] = useState([""]);
+  const [lastCover, setLastCover] = useState("");
+
+  const [titleOverflow, setTitleOverflow] = useState(false);
+  const [artistOverflow, setArtistOverflow] = useState(false);
+
+
+  const titleRef = useRef<HTMLParagraphElement>(null);
+  const artistRef = useRef<HTMLParagraphElement>(null);
+
+  
+  let lastLine : string;
+  let subLine = "Paused...";
   // 1️⃣ Fetch current song
-  const {
+  // const {
+  //   data: current,
+  //   isPending: songPending,
+  //   error: songError,
+  // } = useQuery<Song>({
+  //   queryKey: ["currentSong"],
+  //   queryFn: () => getCurrentSong(access_token),
+  //   refetchInterval: 1000, // refresh every 3 seconds
+  // });
+
+  // const {
+  //   data: progress = 0,
+  //   isPending: progressPending,
+  //   error: progressError,
+  // } = useQuery({
+  //   queryKey: ["Progress"],
+  //   queryFn: () => getProgress(access_token),
+  //   refetchInterval: 900, // refresh every 3 seconds
+  //   enabled: !!access_token && !!current?.is_playing,
+  // });
+
+  // // 2️⃣ Fetch synced lyrics (after song is loaded)
+  // const {
+  //   data: syncedLyrics,
+  //   isPending: syncedPending,
+  //   error: lyricsError,
+  // } = useQuery({
+  //   queryKey: ["syncedLyric", current?.name],
+  //   queryFn: () =>
+  //     getCurrentSyncedLyric(current ? JSON.stringify(current) : ""),
+  //   enabled: !!current, // only run when song is available
+  // });
+
+
+  if(!props.token){
+    return <div>Please log in first...</div>
+  }
+
+ 
+const {
     data: current,
     isPending: songPending,
-    error: songError
-  } = useQuery({
-    queryKey: ["currentSong"],
-    queryFn: () => getCurrentSong(access_token),
-    refetchInterval: 1000, // refresh every 3 seconds
-  });
+    error: songError,
+  } = useCurrentSong(props.token);
 
-  // 2️⃣ Fetch synced lyrics (after song is loaded)
+  if(!current){
+    return <div>No song playing</div>
+  }
+
+ const {
+    data: progress = 0,
+    isPending: progressPending,
+    error: progressError,
+  } = useGetProgress(props.token, current?.is_playing); 
+  
   const {
     data: syncedLyrics,
     isPending: syncedPending,
-    error: lyricsError
-  } = useQuery({
-    queryKey: ["syncedLyric", current?.name],
-    queryFn: () => getCurrentSyncedLyric(current ? JSON.stringify(current) : ""),
-    enabled: !!current, // only run when song is available
-  });
-
-  console.log("synced lyrics:", syncedLyrics);
+    error: lyricsError,
+  } = useGetSyncedLyrics(props.token, current);
 
 
-  // 3️⃣ Loading / error states
+   
+
+  useEffect(()=> {
+    
+    if (current && current.name) {
+      setLastTitle(current.name);
+      setLastArtist(current.artists || []);
+      setLastCover(current.coverUrl);
+
+    }
+    
+
+  }, [current, songError]);
+
+
+  const displayTitle = current?.is_playing ? current.name : lastTitle;
+  const displayCover = current?.is_playing ? current.coverUrl : lastCover;
+  const displayArtists = current?.is_playing ? current.artists.join(", ") : lastArtist.join(", ");
+
+
+
+
+
+  useLayoutEffect(()=> {
+    const handleOverflow = ()=> {
+    if(titleRef.current){
+      console.log("detecting overflow");
+
+      const prevPosition =  titleRef.current.style.position;
+      titleRef.current.style.position = "static";
+      console.log(titleRef.current.scrollWidth);
+      console.log(titleRef.current.clientWidth);
+
+
+      setTitleOverflow(titleRef.current.scrollWidth > titleRef.current.clientWidth);
+      titleRef.current.style.position = prevPosition;
+    }
+    if(artistRef.current){
+
+      const prev = artistRef.current.style.position;
+      artistRef.current.style.position  = "static";
+      setArtistOverflow(artistRef.current.scrollWidth > artistRef.current.clientWidth);
+      artistRef.current.style.position = prev;
+
+    }
+  };
+  handleOverflow();
+
+    window.addEventListener("resize", handleOverflow);
+    return window.removeEventListener("resize", handleOverflow)
+
+  }, [displayTitle, displayArtists]);
+
   if (songPending) return <div>Loading current song...</div>;
   if (songError) return <div>Error loading current song...</div>;
 
-  // 4️⃣ Display
+
+
   return (
-    <div>
-      <h3>Current Song</h3>
-      <div><b>Title:</b> {current?.name}</div>
-      <div><b>Album:</b> {current?.album}</div>
-      <div><b>Artists:</b> {current?.artists?.join(", ")}</div>
-      <div><b>Duration:</b> {current?.duration}</div>
-      <div><b>Current progress:</b>{current.progress} </div>
-{current.is_playing ? (<>
-<div>isplaying</div></>) : (
-    <>
-    <div>not playing</div></>
-)
-}
-      {syncedPending && <div>Loading synced lyrics...</div>}
+    <div className={props.className}>
+      <div className="w-[90vw] max-w-[600px] h-25 my-[6vh] bg-gray-200/50 flex justify-between items-center rounded-sm">
+        <div className="flex-1 flex gap-[2vh] bg-black/75 h-full items-center px-2">
+          <img src={displayCover} className="w-15 rounded-sm"></img>
+          <div className="relative text-xs overflow-hidden w-1/2 h-10">
+            <p ref={titleRef} className={`font-bold ${titleOverflow ? "animate-marquee" : ""} whitespace-nowrap`} 
+            style={{ position: 'absolute', top: 2, left: 0 }}>{displayTitle}</p>
+            
+          
+            <p ref={artistRef} className={` ${artistOverflow ? "animate-marquee" : ""} whitespace-nowrap`}
+            style={{position: 'absolute', top: 20, left: 0}}>
+              {displayArtists}</p>
+          </div>
+          </div>
+
+          <div className="m-[1vh] flex-2 ">
+            {syncedPending && current?.is_playing ? <div>Loading synced lyrics...</div> :
+            current?.is_playing ? (
+            <CurrentLine syncedlyrics={syncedLyrics?.syncedLyrics} progress={progress} />
+          ) : (
+            <p className="text-s">Paused...</p>
+          )}
+          </div>
+        
+      </div>
+      
+      
+      
       {lyricsError && <div>Error loading synced lyrics</div>}
 
-    <pre style={{ whiteSpace: "pre-wrap" }}>
-  {(() => {
-    if (!syncedLyrics) return "No synced lyrics found.";
-    if (typeof syncedLyrics === "string") return syncedLyrics;
-    if (typeof syncedLyrics === "object" && "syncedLyrics" in syncedLyrics)
-      return syncedLyrics.syncedLyrics || "No synced lyrics found.";
-    return "Not playing";
-  })()}
-</pre>
-
-<CurrentLine syncedlyrics={syncedLyrics?.syncedLyrics || ""} progress = {current.progress} />
-
-<p>If you have Spotify Premium, try:</p>
-<button onClick={async ()=> {
-    const access_token = localStorage.getItem("Access_token");
-    const res = await fetch("https://api.spotify.com/v1/me/player/next", {
-        method: "POST",
-        headers: {Authorization: `Bearer ${access_token}`,
-    "Content-Type": "application/json",},
-    })
-}}>Next</button>
-
-<button onClick={async ()=> {
-    const access_token = localStorage.getItem("Access_token");
-    const res = await fetch("https://api.spotify.com/v1/me/player/pause", {
-        method: "POST",
-        headers: {Authorization: `Bearer ${access_token}`,
-    "Content-Type": "application/json",},
-    })
-}}>Pause</button>
-    </div>
+       </div>
   );
 }
 
+
 export default CurrentSong;
+      
 
 
+{/* premium feature */}
+
+      {/* <p>If you have Spotify Premium, try:</p>
+      <button className=""
+        onClick={async () => {
+          const access_token = localStorage.getItem("Access_token");
+          const res = await fetch("https://api.spotify.com/v1/me/player/next", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+              "Content-Type": "application/json",
+            },
+          });
+        }}
+      >
+        Next
+      </button>
+
+      <button
+        onClick={async () => {
+          const access_token = localStorage.getItem("Access_token");
+          const res = await fetch(
+            "https://api.spotify.com/v1/me/player/pause",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${access_token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        }}
+      >
+        Pause
+      </button> */}
+   
