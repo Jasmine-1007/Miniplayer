@@ -1,4 +1,5 @@
 import { QueryClient, useQueryClient } from "@tanstack/react-query";
+import { listenerCount } from "process";
 
 
 export async function refreshToken (RefreshToken : string | null) {
@@ -126,6 +127,26 @@ if(minutes!== undefined && seconds!==undefined &&text !==undefined){
     }
 
     return parsed;
+
+}
+
+
+export function getCurrentLine(parsed: {time: number; text: string}[], progress:number){
+  const currentLine = parsed.find((line, i)=> {
+    //extract next line and the next-next line
+    const next = parsed[i+1];
+    const nextnext = parsed[i+2];
+    //if next line is empty, use the next next line
+    if((!next?.text || next?.text.trim() === "") && nextnext){
+      return progress >= line.time && progress <=nextnext.time;
+    }
+      //normal case, just use next line's time
+      //eithe there is no next line, in which case keep showing, otherwise until next line's time comes 
+      return progress >= line.time && (!next || progress < next?.time);
+  })
+  //if the line is not empty, return the actual lyric
+  if(currentLine && currentLine.text.trim() != "") return currentLine.text;
+
 
 }
 
