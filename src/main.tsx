@@ -6,8 +6,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App'
 import Home from './pages/Home'
-
-import Callback from './functions/Callback'
+import Mainpage from "./functions/Mainpage"
+import HandleCallback from "./functions/handleCallback"
 
 
 const queryClient = new QueryClient();
@@ -20,11 +20,15 @@ const router = createBrowserRouter([
       {
         path: '/',
         element: <Home />
-      },
+      },   
       {
-        path: '/callback',
-        element: <Callback />,
-      }, 
+        path: '/main',
+        element: <Mainpage />,
+      },  
+      {
+        path: '/handlecallback',
+        element: <HandleCallback />,
+      },  
     ]
   }
 ])

@@ -61,10 +61,6 @@ function CurrentSong(props: {className? :string, token : string | null}) {
   // });
 
 
-  if(!props.token){
-    return <div>Please log in first...</div>
-  }
-
  
 const {
     data: current,
@@ -72,21 +68,18 @@ const {
     error: songError,
   } = useCurrentSong(props.token);
 
-  if(!current){
-    return <div>No song playing</div>
-  }
 
  const {
     data: progress = 0,
     isPending: progressPending,
     error: progressError,
-  } = useGetProgress(props.token, current?.is_playing); 
-  
+  } = useGetProgress(props.token, current?.is_playing || false); 
+
   const {
     data: syncedLyrics,
     isPending: syncedPending,
     error: lyricsError,
-  } = useGetSyncedLyrics(props.token, current);
+  } = useGetSyncedLyrics(props.token, current || null);
 
 
    
